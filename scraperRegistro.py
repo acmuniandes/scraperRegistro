@@ -28,15 +28,24 @@ def scrape():
 
     for unaClase in soup.find_all('a'):
         nuevaClase = clase()
-        nuevaClase.nombre=unArticulo.a.string
-        nuevaClase.link=unArticulo.a['href']
+        nuevaClase.link=unaClase.a['href']
         nuevaClase.contenido=""
 
         is_relative_article_link = nuevoArticulo.link.startswith('..')
         if is_relative_article_link:
             nuevaClase.link = "https://registroapps.uniandes.edu.co/scripts" + nuevoArticulo.link.split('..')[1]
         noodles = BeautifulSoup(request(nuevoArticulo.link),'html5lib')
-        nuevoArticulo.contenido = (noodles.find('div',class_="item-text"))
+        casillas = (noodles.find('td',height='17'))
+
+        if (casillas.startsWith('.')):
+            foo=casillas.split('_',1)
+            nuevaClase.edificio = foo[0]
+            nuevaClase.numero = foo[1]
+            print(casillas)
+
+        if('-' in casillas):
+            print (casillas)
+           
 
         if nuevoArticulo.contenido != None:
             nuevoArticulo.fecha = noodles.find('h3', class_="header-date")
