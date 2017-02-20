@@ -26,25 +26,26 @@ def scrape():
 
     soup = BeautifulSoup( page , 'html5lib')
 
-    for unaClase in soup.find_all('a'):
-        nuevaClase = clase()
-        nuevaClase.link=unaClase.a['href']
-        nuevaClase.contenido=""
-
-        is_relative_article_link = nuevoArticulo.link.startswith('..')
+    for unDepartamento in soup.find_all('a'):
+        link = unDepartamento.get('href')
+        print(link)
+        
+        is_relative_article_link = link.startswith('..')
         if is_relative_article_link:
-            nuevaClase.link = "https://registroapps.uniandes.edu.co/scripts" + nuevoArticulo.link.split('..')[1]
-        noodles = BeautifulSoup(request(nuevoArticulo.link),'html5lib')
-        casillas = (noodles.find('td',height='17'))
+            link = "https://registroapps.uniandes.edu.co/scripts" + link.split('..')[1]
+        noodles = BeautifulSoup(request(link),'html5lib')
 
-        if (casillas.startsWith('.')):
-            foo=casillas.split('_',1)
-            nuevaClase.edificio = foo[0]
-            nuevaClase.numero = foo[1]
-            print(casillas)
-
-        if('-' in casillas):
+        for unaClase in noodles.find_all('td',height="17"):
+            casillas = unaClase.string
             print (casillas)
+            if (casillas.startswith('.')):
+                foo=casillas.split('_',1)
+                nuevaClase.edificio = foo[0]
+                nuevaClase.numero = foo[1]
+                print(casillas)
+    
+            if('-' in casillas):
+                print (casillas)
            
 
         if nuevoArticulo.contenido != None:
