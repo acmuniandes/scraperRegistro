@@ -11,51 +11,69 @@ import requests
 
 class clase:
     nombre = ''
-    edificio=''
-    numero=''
-    horario=''
+    salon = []
+    horaInicio=''
+    horaFin=''
     dias=''
-    link=''
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"
 
 def scrape():
-    listaSalones=[]
+    listaClases=[]
     log("solicitando principal")
     page = request("https://registroapps.uniandes.edu.co/scripts/semestre/adm_con_horario_joomla.php")
 
     soup = BeautifulSoup( page , 'html5lib')
 
     for unDepartamento in soup.find_all('a'):
-        link = unDepartamento.get('href')
-        print(link)
+        link =''
+        link=unDepartamento.get('href')
         
         is_relative_article_link = link.startswith('..')
         if is_relative_article_link:
-            link = "https://registroapps.uniandes.edu.co/scripts" + link.split('..')[1]
-        noodles = BeautifulSoup(request(link),'html5lib')
+            nuevolink = "https://registroapps.uniandes.edu.co/scripts" + link.split('..')[1]
+        noodles = BeautifulSoup(request(nuevolink),'html5lib')
+        nombres = noodles.find_all('td', width='156')
 
-        for unaClase in noodles.find_all('td',height="17"):
-            casillas = unaClase.string
-            print (casillas)
-            if (casillas.startswith('.')):
-                foo=casillas.split('_',1)
-                nuevaClase.edificio = foo[0]
-                nuevaClase.numero = foo[1]
-                print(casillas)
-    
-            if('-' in casillas):
-                print (casillas)
-           
+        for casilla in noodles.find_all('td',height='17'):
+            contenido = str(casilla.string)
+            salon = []
+            dias =''
+            horarioInicio =''
+            horarioFin=''
+            if (('.' in contenido and '_' in contenido) or 'NOREQ' in contenido):
+                #print('entre a un salon: '+ contenido)
+                salon.append(contenido)
 
-        if nuevoArticulo.contenido != None:
-            nuevoArticulo.fecha = noodles.find('h3', class_="header-date")
-            nuevoArticulo.imagen = noodles.find('a', class_="article-image").get("href")
-            log(nuevoArticulo.imagen)
-            listaArticulos.append(nuevoArticulo)
+            elif('-' in contenido):
+                #print('entre a un horario: '+ contenido)
+                horario = contenido.split('-')
+                horarioInicio = horario[0]
+                horarioFin = horario[1]
+           #si no contiene el salón o el horario, falta verificar que sea un día
+            elif (esDia(contenido) == 1):
+                #print('entre a un dia: '+ contenido)
+                dias = contenido.replace('    ','')
 
-    elcsv = serialize_articles(listaArticulos)
-    store(elcsv)
+            if( salon and horarioInicio and horarioFin and dias):
+                nuevaClase = clase()
+                nuevaClase.salon = salon
+                nuevaClase.horaInicio = horarioInicio
+                nuevaClase.horaFin = horarioFin
+                nuevaClase.dias = dias
+                print('Clase nueva: \n' +
+                  'Salon: ' + nuevaClase.salon+
+                  'Horario: ' + nuevaClase.horaInicio + '-' + nuevaClase.horaFin + 
+                  'Días: ' + nuevaClase.dias)
+                listaClases.append(nuevaClase)
+
+                dias, horarioInicio, horarioFin, dias = ''
+                salon = []
+                
+            
+
+    #elcsv = serialize_articles(listaArticulos)
+    #store(elcsv)
     log("termine")
     print(datetime.datetime.now())
 
@@ -100,7 +118,13 @@ def store(content):
     r = redis.from_url(os.environ.get('REDIS_URL'))
     r.set('news' , content.encode('utf8'))
 
-
+def esDia(casilla):
+    print(casilla)
+    if ('Dí' in casilla or 'Horas' in casilla or 'Sal' in casilla):
+        return 0
+    else:
+        if('  L  ' in casilla or '  M  ' in casilla or '  I  ' in casilla or'  J  ' in casilla or '  V  ' in casilla or '  S  ' in casilla):
+            return 1
 
 scrape()
 schedule.every(5).minutes.do(scrape)
