@@ -14,10 +14,21 @@ class clase:
     horario = []
     dias=[]
     profesores = []
+
+class salon:
+	edificio = ''
+	numero = ''
+	#REFERENCIA: horarios[a][b] guarda los horarios de un salon, donde b representa la franja horaria y a el día correspondiente
+	#Es decir, horarios[1][0] haría referencia a la primera clase del salón los martes (los días se empiezan a contar desde cero)
+	horarios = [['' for x in range(1)] for x in range(7)]
     
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"
 
 def scrape():
+	horarios = [[0 for x in range(7)] for x in range(1)]
+
+	print(horarios)
+
     listaClases=[]
     log("solicitando principal")
     page = request("https://registroapps.uniandes.edu.co/scripts/semestre/adm_con_horario_joomla.php")
@@ -153,6 +164,67 @@ def esNombre(casilla):
 
 def listaToString(lista):
     return ("[" + ", ".join(map(str, lista)) + "]")
+
+def calcularSalonesDelCampus (listaClases):
+	listaDeSalonesCampus = []
+	for clase in listaClases:
+		agregarSalonesPorClase(listaDeSalonesCampus, clase)
+
+def agregarSalonesPorClase(listaDeSalones, clase):
+	#Si la lista que me pasan está vacía, le agrego un elemento
+	if(len(listaDeSalones) == 0):			
+		nuevo = salon()
+		datosSalon = clase.salon.split('_')
+		nuevo.numero = datosSalon[1]
+		nuevo.edificio = datosSalon[0]
+		listaDeSalones.append(nuevo)
+		agregarClaseASalon(nuevo, clase)
+
+	for salon in listaDeSalones:
+		existeElSalon = salon.edificio in clase.salon and salon.numero in clase.salon
+		if (existeElSalon): #Si existe, simplemente le paso la información de la clase
+			agregarClaseASalon(salon, clase)
+			break
+	if (not existeElSalon): #Si no existe el salon despues de haber recodido a todos, entonces debo agregarlo a la lista de salones
+		nuevo = salon()
+		datosSalon = clase.salon.split('_')
+		nuevo.numero = datosSalon[1]
+		nuevo.edificio = datosSalon[0]
+		listaDeSalones.append(nuevo)
+		agregarClaseASalon(nuevo, clase)
+		
+
+
+
+def agregarClaseASalon(salon, clase):
+	diasLetra = []
+
+	for setDeDias in clase.dias:
+		for caracter in setDeDias:
+			if (caracter != ' '):
+				diasLetra.append(caracter)
+		for diaLetra in diasLetra:
+			dia = identificarNumeroDia(dia)
+			salon.horarios[dia].append(clase.horario)
+		diasLetra = []
+
+
+
+def identificarNumeroDia (letraDia):
+	if (letraDia == 'L'):
+		return 0
+	elif (letraDia == 'M'):
+		return 1
+	elif (letraDia == 'I'):
+		return 2
+	elif (letraDia == 'J'):
+		return 3
+	elif (letraDia == 'V'):
+		return 4
+	elif (letraDia == 'S'):
+		return 5
+	elif (letraDia == 'D'):
+		return 6
 
 
 scrape()
