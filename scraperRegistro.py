@@ -25,11 +25,9 @@ class salon:
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"
 
 def scrape():
-	horarios = [[0 for x in range(7)] for x in range(1)]
-
-	print(horarios)
-
+	
     listaClases=[]
+    
     log("solicitando principal")
     page = request("https://registroapps.uniandes.edu.co/scripts/semestre/adm_con_horario_joomla.php")
 
@@ -59,7 +57,7 @@ def scrape():
 
                 contenido = str(contenido.lstrip().rstrip())
             
-                if ((contenido.startswith('.') and ('_' in contenido)) or 'NOREQ' in contenido):
+                if ( contenido.startswith('.') ):
                     salon.append(contenido.lstrip().rstrip())
                     
                 elif('-' in contenido):
@@ -80,7 +78,7 @@ def scrape():
                     nuevaClase.horario = horario
                     nuevaClase.dias = dias
                     nuevaClase.profesores = profesores
-                    print('Clase nueva: \n' +
+                    print('----Clase nueva---- \n' +
                      'Salones: ' + listaToString(nuevaClase.salon) + '\n' +
                      'Horarios: ' + listaToString(nuevaClase.horario) + '\n' +
                      'Días: ' + listaToString(nuevaClase.dias)+ '\n' +
@@ -94,9 +92,8 @@ def scrape():
                     salon = []
                     profesores = []
                 
-            
-    #elcsv = serialize_articles(listaArticulos)
-    #store(elcsv)
+
+    print(listaToString(listaClases))
     log("termine")
     print(datetime.datetime.now())
 
@@ -117,23 +114,6 @@ def log(algo):
 def timestamp():
     return datetime.datetime.now().strftime("%m/%d/%y %H:%M:%S")
 
-def serialize_articles(lista):
-    articulos = map(serialize_article, lista)
-    finalCsv =  "titulo,link,contenido,fecha,imagen\n" + '\n'.join(articulos)
-    return finalCsv
-
-def serialize_article(article):
-    line_elements = [
-        article.titulo,
-        article.link,
-        article.contenido,
-        article.fecha,
-        article.imagen
-    ]
-    clean_line_elements = map(applyFormatEscaping , line_elements )
-    final_line = ','.join(clean_line_elements)
-    return final_line
-
 def applyFormatEscaping(data):
     return  '"' + str(data).replace('"', "'") + '"'
 
@@ -152,10 +132,9 @@ def esDia(casilla):
         else:
             cantidadLetras += 1
 
-    #Conjetura: la cantidad de espacios en el string es dos veces la cantidad de letras menos 1, por ejemplo:
-    # "L" > Cantidad de letras = 1, espacios  = 0, entonces cumple la formula (0 = 2*(1-1))
-    # "L  M  V" Cantidad de letras = 3, espacios igual 4, entonces cumple la fórmula (4 = 2(3-1))
-    return (cantidadEspacios == 4*(cantidadLetras-1) or cantidadEspacios == 6*(cantidadLetras-1))
+    #La cantidad de espacios en el string es de 4 o 6 por día. Si hay un solo día, no hay espacios
+    #Ejemplos de formato de días: "L", "M      L"; "L    M    I"; "J      V      S"
+    return (cantidadEspacios == 4*(cantidadLetras-1) or cantidadEspacios == 6*(cantidadLetras-1) or cantidadEspacios == 8 (cantidadLetras-1))
 
 def esNombre(casilla):
     if( not esDia(casilla)):
@@ -233,3 +212,11 @@ while True:
     schedule.run_pending()
     time.sleep(1)
     #python scraperregistro.py
+
+ #TODO list:
+	#Hay algunos días que se agregan en los profesores, revisar si tiene que ver con la cantidad de espacios
+		#En efecto, por ejemplo, en el dpto de ciencias biológicas hay una clase que tiene 8 espacios entre dias
+		#Toca ver si el número de espacios tiene que ver con algún atributo de la clase (¿por qué decidieron usar diferentes cantidades de espacios?)
+	#Hay algunos días que la cantidad de espacios entre días no es consistente
+	#Algunos salones tienen solamente . en vez de .NOREQ
+	#Las clases con .NOREQ no están 
