@@ -10,17 +10,33 @@ import os
 import requests
 
 class clase:
-    salon = []
-    horario = []
-    dias = []
-    profesores = []
+
+    def __init__(self, pSalones, pDias, pHorario):
+        self.salones = pSalones
+        self.horario = pHorario
+        self.dias = pDias
+        #self.profesores = []
+
+    def agregarSalon(self, pSalon):
+        self.salones.append(pSalon)
+
+    def agregarDias(self, pDias):
+        self.dias.append(pDias)
+    
+    def agegarHorario(self, pHorario):
+        self.horario.append(pHorario)
+    
 
 class salon:
-    edificio = ''
-    numero = ''
-    #REFERENCIA: horarios[a][b] guarda los horarios de un salon, donde b representa la franja horaria y a el día correspondiente
-    #Es decir, horarios[1][0] haría referencia a //la primera// una clase del salón los martes (los días se empiezan a contar desde cero)
-    horarios = [['' for x in range(1)] for x in range(7)]
+
+    def __init__(self, pIdSalon):
+        self.idSalon = pIdSalon
+        #REFERENCIA: horarios[a][b] guarda los horarios de un salon, donde b representa la franja horaria y a el día correspondiente
+        #Es decir, horarios[1][0] haría referencia a //la primera// una clase del salón los martes (los días se empiezan a contar desde cero)
+        self.horarios = [['' for x in range(1)] for x in range(7)]
+
+    def agregarHorario(self, pDia, pHorario):
+        self.horarios[pDia].append(pHorario)
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"
 
@@ -48,9 +64,9 @@ def scrape():
         contenido = ''
 
         #Variables locales que usaré recorriendo los departamentos
-        salon = []
-        dias =[]
-        horario = []
+        salonesRaw = []
+        diasRaw =[]
+        horariosRaw = []
         profesores = []
         #Variable que me notifica que acabe de leer una clase
         skip = False;
@@ -64,57 +80,58 @@ def scrape():
                 contenido = str(contenido.lstrip().rstrip())
               #TODO Mejorar que los .NOREQ y los . no salgan en los salones
                 if contenido.startswith('.')  and not 'REQ' in contenido and contenido != '.':
-                    salon.append(contenido.lstrip().rstrip())
+                    salonesRaw.append(contenido.lstrip().rstrip())
                     
                 elif '-' in contenido and len (contenido) > 2:
                     #print('entre a un horario: '+ contenido)
-                    horario.append(contenido)
+                    horariosRaw.append(contenido)
 
                #si no contiene el salón o el horario, falta verificar que sea un día
                 elif (esDia(contenido)):
                     #print('entre a un dia: '+ contenido )
-                    dias.append(contenido)
+                    diasRaw.append(contenido)
 
-                elif(esNombre(contenido)):
-                    profesores.append(contenido)
+                #elif(esNombre(contenido)):
+                    #profesores.append(contenido)
 
                 #Si leo el string horas, significa que estoy en una clase nueva
                 if(contenido == 'Horas'):
                     skip = True
 
-                if( salon and horario and dias and profesores and skip):
-                    nuevaClase = clase()
-                    nuevaClase.salon = salon
-                    nuevaClase.horario = horario
-                    nuevaClase.dias = dias
-                    nuevaClase.profesores = profesores
+                if( salonesRaw and horariosRaw and diasRaw and skip):
+                    nuevaClase = clase(salonesRaw, diasRaw, horariosRaw)
                     print('----Clase nueva---- \n' +
-                        'Salones: ' + listaToString(nuevaClase.salon) + '\n' +
-                        'Horarios: ' + listaToString(nuevaClase.horario) + '\n' +
-                        'Días: ' + listaToString(nuevaClase.dias)+ '\n' +
-                        'Profesores: ' + listaToString(nuevaClase.profesores))
+                          'Salones: ' + listaToString(nuevaClase.salones) + '\n' +
+                          'Horarios: ' + listaToString(nuevaClase.horario) + '\n' +
+                          'Días: ' + listaToString(nuevaClase.dias)
+                         )
 
                     listaClases.append(nuevaClase)
 
-                    dias = []
-                    horario = []
-                    dias = []
-                    salon = []
+                    diasRaw = []
+                    horariosRaw = []
+                    diasRaw = []
+                    salonesRaw = []
                     profesores = []
 
                 #Reinicio toda la clase actual, porque no encontré nada concluyente (o no hay salón u horario o días)
                 if skip:
-                    dias = []
-                    horario = []
-                    dias = []
-                    salon = []
+                    diasRaw = []
+                    horariosRaw = []
+                    diasRaw = []
+                    salonesRaw = []
                     profesores = []
                     skip = False
 
-    salones = []
     salones = calcularSalonesDelCampus(listaClases)
 
-    print(salonesCampus(salones))
+    with open('test.csv', 'w') as myfile:
+        writer = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        for noSeQue in salones:
+            info = [noSeQue.idSalon, listaDeListasToString(noSeQue.horarios)]
+            writer.writerow(info)
+
+    #print(salonesCampus(salones))
     log("termine")
     print(datetime.datetime.now())
 
@@ -165,42 +182,43 @@ def esNombre(casilla):
 def listaToString(lista):
     return ("[" + ", ".join(map(str, lista)) + "]")
 
-def calcularSalonesDelCampus(listaClases):
+def calcularSalonesDelCampus(pListaClases):
     listaDeSalonesCampus = []
-    for clase in listaClases:
-        agregarSalonesPorClase(listaDeSalonesCampus, clase)
+    for claseL in pListaClases:
+        agregarSalonesPorClase(listaDeSalonesCampus, claseL)
     return listaDeSalonesCampus
 
 
-def agregarSalonesPorClase(listaDeSalones, clase):
-    global salon
-    for salonDeClase in clase.salon:
-        posicion = 0
+def agregarSalonesPorClase(listaDeSalones, pClase):
+    posicion = 0
+    for salonDeClase in pClase.salones:
         existeElSalon = False
         for salonL in listaDeSalones:
-            existeElSalon = salonL.edificio in salonDeClase and salonL.numero in salonDeClase #Si el salon tiene el edificio y el numero del salon busacdo, entonces si existe
+            existeElSalon = salonL.idSalon == salonDeClase #Si el salon tiene el id del salon busacdo, entonces si existe
             if (existeElSalon): #Si existe, simplemente le paso la información de la clase
-                agregarClaseASalon(salon, clase.horario[posicion], clase.dias[posicion]) 
+                #print ("A " + salonL.idSalon + " le agregué [" + clase.dias[posicion] +"]  = " + clase.horario[posicion])
+                try:
+                    agregarClaseASalon(salonL, pClase.horario[posicion], pClase.dias[posicion]) 
+                except IndexError:
+                    print ("A " + salonL.idSalon + " le intenté agregar " + listaToString(pClase.dias) +"[" + str(posicion) + "]"  + listaToString(pClase.horario) + "[" + str(posicion) + "] Y se cagó por índice")
+                
                 break
 
         if not existeElSalon: #Si al final de recorrer toda la lista de salones no existe el salon, entonces debo agregarlo a la lista de salones
-            nuevo = salon()
-            datosSalon = salonDeClase.split('_')
-            nuevo.edificio = datosSalon[0]
-            try:
-                nuevo.numero = datosSalon[1]
-            except IndexError:
-                print('Clase en el ' + datosSalon[0])
+            nuevo = salon(salonDeClase)
+            agregarClaseASalon(nuevo, pClase.horario[posicion], pClase.dias[posicion])
             listaDeSalones.append(nuevo)
-            agregarClaseASalon(nuevo, clase.horario[posicion], clase.dias[posicion])
+            print (nuevo.idSalon)
         posicion += 1
+        
 
 
-def agregarClaseASalon(salon, horario, dias):
-    for caracter in dias:#Por cada día, voy a agregar los horarios al salon
+def agregarClaseASalon(pSalon, pHorario, pDias):
+    for caracter in pDias:#Por cada día, voy a agregar los horarios al salon
         dia = identificarNumeroDia(caracter)
-        if (dia >= 0):
-            salon.horarios[dia].append(horario)
+        if dia >= 0 and (not pHorario in pSalon.horarios[dia]): #Si el día es un índice válido y si el horario NO está en la lista horarios, entonces lo agrego
+            pSalon.agregarHorario(dia, pHorario) #Esto lo hago para no tener muchos horarios repetidos para el mismo salón
+            print ("A " + pSalon.idSalon + " le agregué [" + caracter +"]  = " + pHorario)
     
 
 def identificarNumeroDia (letraDia):
@@ -223,11 +241,11 @@ def identificarNumeroDia (letraDia):
 
 def salonesCampus(listaDeSalones):
     respuesta = ''
-    for salon in listaDeSalones:
-        print("Voy en: " + salon.edificio + salon.numero)
+    for salonL in listaDeSalones:
+        print("Voy en: " + salonL.edificio + salonL.numero)
         respuesta += (
-            '----------' + salon.edificio + salon.numero + '---------\n' +
-            listaDeListasToString(salon.horarios) +
+            '----------' + salonL.edificio + salonL.numero + '---------\n' +
+            listaDeListasToString(salonL.horarios) +
             '------------------------------\n'
         )
     return respuesta
@@ -254,7 +272,7 @@ def listaDeListasToString(listaDeListas):
     i = 0;
     respuesta = ''
     while ( i < len(listaDeListas) ): #Dimensión de los días (voy a ir por todos los días)
-        respuesta += '[' + identificarDiaNumero(i) + '] =' + listaToString(listaDeListas[i]) + '\n'
+        respuesta += '[' + identificarDiaNumero(i) + '] =' + listaToString(listaDeListas[i]) + ']'
         i += 1
     return respuesta
 
