@@ -8,6 +8,7 @@ import datetime
 import redis
 import os
 import requests
+import json
 
 class clase:
 
@@ -15,7 +16,6 @@ class clase:
         self.salones = pSalones
         self.horario = pHorario
         self.dias = pDias
-        #self.profesores = []
 
     def agregarSalon(self, pSalon):
         self.salones.append(pSalon)
@@ -33,12 +33,14 @@ class salon:
         self.idSalon = pIdSalon
         #REFERENCIA: horarios[a][b] guarda los horarios de un salon, donde b representa la franja horaria y a el día correspondiente
         #Es decir, horarios[1][0] haría referencia a //la primera// una clase del salón los martes (los días se empiezan a contar desde cero)
-        self.horarios = [['' for x in range(1)] for x in range(7)]
+        self.horarios = [['' for x in range(0)] for x in range(7)]
 
     def agregarHorario(self, pDia, pHorario):
         self.horarios[pDia].append(pHorario)
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"
+
+data = {}
 
 def scrape():
     #Inicializo la lista de clases de registro
@@ -67,7 +69,6 @@ def scrape():
         salonesRaw = []
         diasRaw =[]
         horariosRaw = []
-        profesores = []
         #Variable que me notifica que acabe de leer una clase
         skip = False;
 
@@ -91,9 +92,6 @@ def scrape():
                     #print('entre a un dia: '+ contenido )
                     diasRaw.append(contenido)
 
-                #elif(esNombre(contenido)):
-                    #profesores.append(contenido)
-
                 #Si leo el string horas, significa que estoy en una clase nueva
                 if(contenido == 'Horas'):
                     skip = True
@@ -112,7 +110,6 @@ def scrape():
                     horariosRaw = []
                     diasRaw = []
                     salonesRaw = []
-                    profesores = []
 
                 #Reinicio toda la clase actual, porque no encontré nada concluyente (o no hay salón u horario o días)
                 if skip:
@@ -120,16 +117,22 @@ def scrape():
                     horariosRaw = []
                     diasRaw = []
                     salonesRaw = []
-                    profesores = []
                     skip = False
 
     salones = calcularSalonesDelCampus(listaClases)
 
-    with open('test.csv', 'w') as myfile:
+    with open('Classrooms.csv', 'w') as myfile:
         writer = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         for noSeQue in salones:
             info = [noSeQue.idSalon, listaDeListasToString(noSeQue.horarios)]
             writer.writerow(info)
+    myfile.close
+
+    with open('Classrooms.json', 'w') as outFile:
+        for salonFinal in salones:
+            data[salonFinal.idSalon] = salonFinal.horarios
+        json.dump(data, outFile)
+    outFile.close
 
     #print(salonesCampus(salones))
     log("termine")
@@ -272,7 +275,7 @@ def listaDeListasToString(listaDeListas):
     i = 0;
     respuesta = ''
     while ( i < len(listaDeListas) ): #Dimensión de los días (voy a ir por todos los días)
-        respuesta += '[' + identificarDiaNumero(i) + '] =' + listaToString(listaDeListas[i]) + ']'
+        respuesta += '[' + identificarDiaNumero(i) + '] =' + listaToString(listaDeListas[i]) + ' '
         i += 1
     return respuesta
 
