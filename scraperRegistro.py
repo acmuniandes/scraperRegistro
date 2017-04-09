@@ -40,8 +40,6 @@ class salon:
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"
 
-data = {}
-
 def scrape():
     #Inicializo la lista de clases de registro
     listaClases=[]
@@ -128,13 +126,20 @@ def scrape():
             writer.writerow(info)
     myfile.close
 
-    with open('Classrooms.json', 'w') as outFile:
-        for salonFinal in salones:
-            data[salonFinal.idSalon] = salonFinal.horarios
-        json.dump(data, outFile)
-    outFile.close
+    data = {}
 
-    #print(salonesCampus(salones))
+    serializeClassrooms(salones, 'OccupiedClassrooms.json', data)
+
+    #Optimizaciones de memoria
+    soup = ''
+    listaClases = ''
+
+    calcularDisponibles(salones)
+
+    data = {}
+
+    serializeClassrooms(salones, 'FreeClasrooms.json', data)
+
     log("termine")
     print(datetime.datetime.now())
 
@@ -204,7 +209,6 @@ def agregarSalonesPorClase(listaDeSalones, pClase):
                     agregarClaseASalon(salonL, pClase.horario[posicion], pClase.dias[posicion]) 
                 except IndexError:
                     print ("A " + salonL.idSalon + " le intenté agregar " + listaToString(pClase.dias) +"[" + str(posicion) + "]"  + listaToString(pClase.horario) + "[" + str(posicion) + "] Y se cagó por índice")
-                
                 break
 
         if not existeElSalon: #Si al final de recorrer toda la lista de salones no existe el salon, entonces debo agregarlo a la lista de salones
@@ -278,6 +282,71 @@ def listaDeListasToString(listaDeListas):
         respuesta += '[' + identificarDiaNumero(i) + '] =' + listaToString(listaDeListas[i]) + ' '
         i += 1
     return respuesta
+
+def generarArregloGeneral():
+    iteracion = (2200 - 630)/10
+    arregloTodosLosHorarios = []
+    i = 0
+    while i < iteracion:
+        horarioNuevo = 630 + i*10
+        if esHoraValida(horarioNuevo):
+            arregloTodosLosHorarios.append(horarioNuevo)
+        i+=1 
+    return arregloTodosLosHorarios
+
+def quitarDisponibilidad(horario, arregloDia):
+    valores = horario.split('-')
+    k = 0
+    while k < len(valores): 
+        valores[k] = valores[k].lstrip().rstrip()
+        k += 1
+    inicioClase = int(valores[0])
+    finalClase = int(valores[1])
+
+    deboEliminar = False
+    horariosAEliminar = []
+    for franjaHoraria in arregloDia:
+        if franjaHoraria == inicioClase:
+            deboEliminar = True
+        elif franjaHoraria == finalClase:
+            deboEliminar = False
+            horariosAEliminar.append(franjaHoraria)
+            break
+        if deboEliminar:
+            horariosAEliminar.append(franjaHoraria)
+    
+    for eliminar in horariosAEliminar:
+        arregloDia.remove(eliminar)
+
+def calcularDisponibles(pSalones):
+    #Hago esto para no tener que calcular el arreglo general cada vez
+    variableEstado = generarArregloGeneral()
+    salonesDisponibles = [[None for x in range(0)] for x in range(7)]
+
+    for cadaSalon in pSalones:
+        i = 0
+        for dia in cadaSalon.horarios:
+            horariosDisponibles = variableEstado[:] #Para que no se haga referencia al mismo estado
+            for horario in dia:
+                quitarDisponibilidad(horario, horariosDisponibles)
+            cadaSalon.horarios[i] = horariosDisponibles
+            i+=1;
+    
+def serializeClassrooms(classrooms, fileName, emptyDirectory):
+    with open(fileName, 'w') as outFile:
+        for salonFinal in classrooms:
+            emptyDirectory[salonFinal.idSalon] = salonFinal.horarios
+        json.dump(emptyDirectory, outFile)
+    outFile.close
+
+def esHoraValida(hora):
+    horaStr = str(hora)
+    long = len(horaStr)
+    horaStr = horaStr[long-2:long]
+    if (int(horaStr) > 60):
+        return False
+    return True
+
 
 scrape()
 schedule.every(5).minutes.do(scrape)
