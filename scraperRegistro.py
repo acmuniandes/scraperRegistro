@@ -96,11 +96,11 @@ def scrape():
 
                 if( salonesRaw and horariosRaw and diasRaw and skip):
                     nuevaClase = clase(salonesRaw, diasRaw, horariosRaw)
-                    print('----Clase nueva---- \n' +
-                          'Salones: ' + listaToString(nuevaClase.salones) + '\n' +
-                          'Horarios: ' + listaToString(nuevaClase.horario) + '\n' +
-                          'Días: ' + listaToString(nuevaClase.dias)
-                         )
+                    #print('----Clase nueva---- \n' +
+                     #     'Salones: ' + listaToString(nuevaClase.salones) + '\n' +
+                      #    'Horarios: ' + listaToString(nuevaClase.horario) + '\n' +
+                       #   'Días: ' + listaToString(nuevaClase.dias)
+                         #)
 
                     listaClases.append(nuevaClase)
 
@@ -133,10 +133,13 @@ def scrape():
     #Optimizaciones de memoria
     soup = ''
     listaClases = ''
+    data = {}
 
     calcularDisponibles(salones)
 
-    data = {}
+    serializeClassrooms(salones, 'FreeClasroomsNotOpt.json', data)
+
+    optimizarDisponibles(salones)
 
     serializeClassrooms(salones, 'FreeClasrooms.json', data)
 
@@ -146,11 +149,11 @@ def scrape():
 def request(url):
     log("requesting " + url)
     custom_headers = {
-        'user-agent' : USER_AGENT ,
+        'user-agent' : USER_AGENT,
         'accept': "text/html;charset=UTF-8"
     }
-    response = requests.get(url , headers = custom_headers)
-    response.encoding="utf-8"
+    response = requests.get(url, headers = custom_headers)
+    response.encoding= "utf-8"
     return response.text
 
 def log(algo):
@@ -327,9 +330,14 @@ def calcularDisponibles(pSalones):
         i = 0
         for dia in cadaSalon.horarios:
             horariosDisponibles = variableEstado[:] #Para que no se haga referencia al mismo estado
-            for horario in dia:
-                quitarDisponibilidad(horario, horariosDisponibles)
-            cadaSalon.horarios[i] = horariosDisponibles
+            if dia: #Checking list emptyness
+                print("longitud del día: " + str(len(dia)))
+                for horario in dia:
+                    quitarDisponibilidad(horario, horariosDisponibles)
+                cadaSalon.horarios[i] = horariosDisponibles
+            else:
+                print("entré a pythnic empty list")
+                cadaSalon.horarios[i] = horariosDisponibles
             i+=1;
     
 def serializeClassrooms(classrooms, fileName, emptyDirectory):
@@ -343,10 +351,56 @@ def esHoraValida(hora):
     horaStr = str(hora)
     long = len(horaStr)
     horaStr = horaStr[long-2:long]
-    if (int(horaStr) > 60):
-        return False
-    return True
+    if (int(horaStr) < 60):
+        return True
+    return False
 
+def optimizarDisponibles(pSalones):
+     for cadaSalon in pSalones:
+        i = 0
+        for dia in cadaSalon.horarios:
+            if dia: #Si la lista no está vacía
+                cadaSalon.horarios[i] = optimizarContinuidad(dia)
+            else:
+                cadaSalon.horarios[i] = "C Mamó :("
+            i += 1
+        
+def optimizarContinuidad(horario):
+    horarioOptimizado = []
+    i = 0
+    esIntervaloContinuo = False
+    print (len(horario))
+    while i < len(horario)-1:
+        if not esIntervaloContinuo:
+            esIntervaloContinuo = esHorarioContinuo(horario[i], horario[i+1])
+            horarioOptimizado.append(horario[i])
+        else:
+            esIntervaloContinuo = esHorarioContinuo(horario[i], horario[i+1])
+            if not esIntervaloContinuo:
+                horarioOptimizado.append(horario[i])
+        i += 1
+    horarioOptimizado.append(horario[-1])#Agrego el último elemento
+    return horarioOptimizado
+
+#Horario 1 es el más temprano
+#Horario 2 es el más tarde
+def esHorarioContinuo(horario1, horario2):
+    hayCambioHora = hayCambioDeHora(horario1,horario2)
+    if hayCambioHora:
+        if (int(horario2) - int(horario1) == 50):
+            return True
+        return False
+    else:
+        return int(horario2) - int(horario1) == 10
+
+
+def hayCambioDeHora(horario1, horario2):
+    hora1 = int(str(horario1)[len(str(horario1))-3])
+    hora2 = int(str(horario2)[len(str(horario2))-3])
+
+    if abs(hora1-hora2) == 1 or abs(hora1-hora2) == 9:
+        return True
+    return False
 
 scrape()
 schedule.every(5).minutes.do(scrape)
