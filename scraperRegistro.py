@@ -140,6 +140,7 @@ def scrape():
     serializeClassrooms(salones, 'FreeClasroomsNotOpt.json', data)
 
     optimizarDisponibles(salones)
+    definirIntervalosLibres(salones)
 
     serializeClassrooms(salones, 'FreeClasrooms.json', data)
 
@@ -362,7 +363,7 @@ def optimizarDisponibles(pSalones):
             if dia: #Si la lista no está vacía
                 cadaSalon.horarios[i] = optimizarContinuidad(dia)
             else:
-                cadaSalon.horarios[i] = "C Mamó :("
+                cadaSalon.horarios[i] = "CompletelyFree"
             i += 1
         
 def optimizarContinuidad(horario):
@@ -401,6 +402,21 @@ def hayCambioDeHora(horario1, horario2):
     if abs(hora1-hora2) == 1 or abs(hora1-hora2) == 9:
         return True
     return False
+
+def definirIntervalosLibres(pSalones):
+    for cadaSalon in pSalones:
+        d = 0
+        for dia in cadaSalon.horarios:
+            intervalos = []
+            i = 0
+            while i < len(dia)-1:
+                nuevoIntervalo = str(dia[i]) + " - " + str(dia[i+1])
+                intervalos.append(nuevoIntervalo)
+                i+=2 #Esto lo hago porque debo pasar al siguiente intervalo (me tengo que saltar el que acabo de agregar)
+            cadaSalon.horarios[d] = intervalos
+            d +=1
+
+
 
 scrape()
 schedule.every(5).minutes.do(scrape)
