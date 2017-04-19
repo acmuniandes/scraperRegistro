@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html>
   <head>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.js" integrity="sha256-tA8y0XqiwnpwmOIl3SGAcFl2RvxHjA8qp0+1uCGmRmg=" crossorigin="anonymous"></script>
@@ -14,151 +14,154 @@
     </head>
 
     <body>
-        
+    
         <div id='app'><!-- Contenedor de todo Vue -->
 
-        {{arregloSalones}}
+            <!-- Esto no se está ejecutando -->
+            <p v-on:onload="cargarSalones('Onload')"></p>
 
-            <button v-on:click="cargarSalones()">
-                Cargar Salones del JSON
+            <button v-on:click="selectDay = !selectDay">
+                {{daySelector}}
             </button>
-
-            <button v-on:click="formatClassrooms(buscarSalonesEdificio('ML'))">
-                Cargar Salones ML
-            </button>
-
-            <button v-on:click="pruebaScriprt()">
-                Script Python
-            </button>
-
-            <h2>
-                    {{message}}
-            </h2>
 
             
+                <select v-if="selectDay" v-model="selectedDay">
+                    <option selected>Lunes</option>
+                    <option>Martes</option>
+                    <option>Miercoles</option>
+                    <option>Jueves</option>
+                    <option>Viernes</option>
+                    <option>Sabado</option>
+                    <option>Domingo</option>
+                </select>
 
-            <input>
-            
-            </input>
+            <button v-if="selectedClassroom" v-on:click="buscarSalonesEdificio(selectedClassroom, selectedDay)">
+                {{SalonesDisponibles}}
+            </button>
+
+            <select v-model="selectedClassroom">
+                <option v-for="item in salones" selected>{{item}}</option>
+            </select>
+
+            <h1> Edificio seleccionado: {{selectedClassroom}} </h1>
+
+            <h3 v-for="(disponible, index) in message">{{index + ": "+ disponible}}</h3>
 
         </div>
 
-        <script>
+        <script v-on:onload="cargarSalones('Onload')">
         
         var app = new Vue({
             el: '#app',
             data:{
                 arregloSalones: {},
                 jsonObject: '',
-                message: ''
+                message: '',
+                test:null,
+                selectDay: false,
+                selectedDay: -1,
+                today: new Date(),
+                salones: ["Au","ML", "W", "Tx", "R", "Q", "J", "H", "Ip", "B", "Z", "S1", "SD", "LL", "Pu", "K2"],
+                selectedClassroom: ''
             },
             methods:{
-                cargarSalones: function(){
-                    let networkPromise = fetch('/UpdatedClassrooms.json');
+                cargarSalones: function(llamado)
+                {
+                    console.log("Comienzo desde " + llamado + ": " + new Date())   
+                    let networkPromise = fetch('/FreeClassrooms.json');
                     networkPromise.then((rjson)=>{
                         let parsinPromise = rjson.json();
                         parsinPromise.then((rsalones)=>{
-                            console.log(rsalones)
+                            console.log(JSON.stringify(rsalones));
                             this.jsonObject = rsalones;
                             //this.arregloSalones = JSON.parse(rsalones); //Acá puedo llamarle a rSalones un atributo (objeto del JSON)
                         })
                    })
+                   
+                console.log("Se demoro hasta " + llamado + ": " + new Date())
                },
 
-               buscarSalonesEdificio: function(edificio)
+               buscarSalonesEdificio: function(salon, dia)
                {
-                   var salonesEdificio = []                
-                   for (var idSalon in this.jsonObject)
+                   console.log(dia)
+                   dia = this.identifyDay(dia)
+                   console.log(dia)
+                   salon = salon.toUpperCase();
+                   console.log(salon + "//" + dia);
+                   salones = {}
+                   for(elemento in this.jsonObject)
                    {
-                       if (idSalon.includes(edificio))
+                       if (elemento.includes('.'+salon))
                        {
-                            var horarioSalon = this.jsonObject[idSalon];
-                            salonesEdificio.push([idSalon, horarioSalon]);
-                       }
-                       
-                   }
-
-                   console.log(salonesEdificio);
-
-                   this.formatClassrooms(salonesEdificio);
-               },
-
-               formatClassrooms: function(arreglo)
-               {
-                   var respuesta = ''
-
-                   console.log(typeof arreglo)
-
-                   console.log(arreglo[0])
-
-                   for (var j = 0; j < arreglo.length; j++)
-                   {
-                        respuesta += arreglo[j][0] + "\n";
-                       for (dia in arreglo[j][i])
-                       {
-                           var i = 0;
-                           for (horario in dia)
-                           {
-                               if (horario.length > 5)
-                               {
-                                   console.log("entre")
-                                    respuesta += this.formatDay(i) + horario + "\n";
-                                    i++;
-                               }
-                           }                           
+                           //kill yourself javaScript
+                           salones[elemento] = this.jsonObject[elemento][dia]
                        }
                    }
-
-                   console.log(respuesta);
-                   this.message = respuesta;
+                   this.message = salones
                },
 
-               formatDay: function(day)
+               selectClassroom: function(salon)
                {
-                   if (day == 0)
-                   {
-                       return "Lunes: ";
-                   }
-                   else if (day == 1)
-                   {
-                       return "Martes: ";
-                   }
-                   else if (day == 2)
-                   {
-                       return "Miércoles: ";
-                   }
-                   else if (day == 3)
-                   {
-                       return "Jueves: ";
-                   }
-                   else if (day == 4)
-                   {
-                       return "Viernes: ";
-                   }
-                   else if (day == 5)
-                   {
-                       return "Sábado: ";
-                   }
-                   else if (day == 6)
-                   {
-                       return "Domingo: ";
-                   }
-                   else
-                   {
-                        return "He fucked up";
-                   }
+                    this.selectedClassroom = salon
                },
 
-               pruebaScript: function(input)
+               identifyDay: function(strDay)
                {
-                    $.ajax({
-                        type: "POST",
-                        url: "/classroomsQuery.py",
-                        data: { param: input },
-                        success: console.log("WTF")
-                    });
-               }
+                   if (!isNaN(strDay))
+                        return strDay;
+                   if (strDay.startsWith("L"))
+                        return 0;
+                    else if (strDay.startsWith("Ma"))
+                        return 1;
+                    else if (strDay.startsWith("Mi"))
+                        return 2;
+                    else if (strDay.startsWith("J"))
+                        return 3;
+                    else if (strDay.startsWith("V"))
+                        return 4;
+                    else if (strDay.startsWith("S"))
+                        return 5;
+                    else
+                        return 6;
+               },
 
+                isArray: function(what) 
+                {
+                    return Object.prototype.toString.call(what) === '[object Array]';
+                }
+
+            },
+            //Ejecuta código al cargar la página (Especificamente, al crear la instancia del objeto Vue)
+            created: function()
+            {
+                this.cargarSalones("Created")
+                console.log(this.jsonObject)
+            },
+
+            computed:{
+                //Computed section means cached values that only modify when a DOM event changes them
+                daySelector: function()
+                {
+                    if (this.selectDay)
+                    {
+                        return "Cambiar a dia actual"
+                    }
+                    else
+                    {
+                        this.selectedDay = this.today.getDay()-1
+                        if (this.selectedDay<0)
+                            selectedDay = 6
+                        return "Cambiar a seleccionar dia"
+                    }
+                },
+
+                SalonesDisponibles: function()
+                {
+                    if (!this.selectDay)
+                        return "Buscar salones disponibles para hoy";
+                    else
+                        return "Buscar salones disponibles para el " + this.selectedDay;
+                }
             }
         })
 
