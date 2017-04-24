@@ -11,23 +11,34 @@
         <!-- Latest compiled and minified JavaScript -->
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
         <script src="https://unpkg.com/vue"></script>
+
+        <!-- CSS -->
+        <link rel="stylesheet" type="text/css" href="CSS.css">
+        <link href="https://fonts.googleapis.com/css?family=Raleway:100,300" rel="stylesheet">
+
+        <script src="https://unpkg.com/vue-multiselect@2.0.0-beta.14"></script>
+        <style src="https://unpkg.com/vue-multiselect@2.0.0-beta.14/dist/vue-multiselect.min.css"></style>
+
     </head>
 
     <body>
     
         <div id='app'><!-- Contenedor de todo Vue -->
 
-            <!-- Esto no se está ejecutando -->
-            <p v-on:onload="cargarSalones('Onload')"></p>
 
-            <button v-on:click="selectDay = !selectDay">
-                {{daySelector}}
-            </button>
+            <h1>
+                &#191;Libre?
+            </h1>
+            <div id="selector">
+
+                <button v-on:click="changeMode()">
+                    {{daySelector}}
+                </button>
 
             
                 <select v-if="selectDay" v-model="selectedDay">
-                    <option selected>Lunes</option>
-                    <option>Martes</option>
+                    <option value = "Lunes" selected default>Lunes</option>
+                    <option value = "Martes">Martes</option>
                     <option>Miercoles</option>
                     <option>Jueves</option>
                     <option>Viernes</option>
@@ -35,22 +46,26 @@
                     <option>Domingo</option>
                 </select>
 
-            <button v-if="selectedClassroom" v-on:click="buscarSalonesEdificio(selectedClassroom, selectedDay)">
-                {{SalonesDisponibles}}
-            </button>
+                <select v-model="selectedClassroom">
+                    <option v-for="item in salones" selected>{{item}}</option>
+                </select>
+            
+                <br>
 
-            <select v-model="selectedClassroom">
-                <option v-for="item in salones" selected>{{item}}</option>
-            </select>
+                <button v-if="selectedClassroom && (selectedDay.length > 0 || selectedDay >= 0)" v-on:click="buscarSalonesEdificio(selectedClassroom, selectedDay)">
+                    {{SalonesDisponibles}}
+                </button>
+
+            </div>
 
             <h1> Edificio seleccionado: {{selectedClassroom}} </h1>
 
-            <h3 v-for="(disponible, index) in message">{{index + ": "+ disponible}}</h3>
+            <p id="cr" v-for="(disponible, index) in message">{{formatClassroom(index) + ": "+ disponible}}</p>
 
         </div>
-
-        <script v-on:onload="cargarSalones('Onload')">
         
+        <script v-on:onload="cargarSalones('Onload')">
+
         var app = new Vue({
             el: '#app',
             data:{
@@ -59,7 +74,7 @@
                 message: '',
                 test:null,
                 selectDay: false,
-                selectedDay: -1,
+                selectedDay: 'L',
                 today: new Date(),
                 salones: ["Au","ML", "W", "Tx", "R", "Q", "J", "H", "Ip", "B", "Z", "S1", "SD", "LL", "Pu", "K2"],
                 selectedClassroom: ''
@@ -68,7 +83,7 @@
                 cargarSalones: function(llamado)
                 {
                     console.log("Comienzo desde " + llamado + ": " + new Date())   
-                    let networkPromise = fetch('/FreeClassrooms.json');
+                    let networkPromise = fetch('data/FreeClassrooms.json');
                     networkPromise.then((rjson)=>{
                         let parsinPromise = rjson.json();
                         parsinPromise.then((rsalones)=>{
@@ -128,8 +143,20 @@
                 isArray: function(what) 
                 {
                     return Object.prototype.toString.call(what) === '[object Array]';
-                }
+                },
 
+                changeMode: function()
+                {
+                    if (!this.selectDay)
+                        this.selectedDay = '';
+                    this.selectDay = !this.selectDay;
+                    
+                },
+
+                formatClassroom: function(classroom)
+                {
+                    return classroom.substr(1);
+                }
             },
             //Ejecuta código al cargar la página (Especificamente, al crear la instancia del objeto Vue)
             created: function()
@@ -150,7 +177,7 @@
                     {
                         this.selectedDay = this.today.getDay()-1
                         if (this.selectedDay<0)
-                            selectedDay = 6
+                            this.selectedDay = 6
                         return "Cambiar a seleccionar dia"
                     }
                 },

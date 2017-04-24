@@ -1,0 +1,34 @@
+#app
+{
+        text-align: center;
+        
+}
+
+h1
+{
+    font-family: 'Raleway', sans-serif;
+    background-color: darkorange;
+    margin: auto;
+    width: 30%;
+    padding: 4px;
+    color: whitesmoke;
+    font-size: 40px;
+    text-shadow: 1px 1px 2px darkblue;
+}
+
+#selector
+{
+    margin: auto;
+    width: 30%;
+    padding: 20px;
+    background-color: orange;
+}
+
+#cr
+{
+    font-size: 14px;
+    font-weight: bold;
+    margin: auto;
+    width: 30%;
+    background-color: sandybrown;
+}
