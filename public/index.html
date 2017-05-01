@@ -1,198 +1,115 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.js" integrity="sha256-tA8y0XqiwnpwmOIl3SGAcFl2RvxHjA8qp0+1uCGmRmg=" crossorigin="anonymous"></script>
-        <!-- Latest compiled and minified CSS -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<head>
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.js" integrity="sha256-tA8y0XqiwnpwmOIl3SGAcFl2RvxHjA8qp0+1uCGmRmg=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/vue"></script>
+  <link rel="stylesheet" type="text/css" href="CSS.css">
+  <link href="https://fonts.googleapis.com/css?family=Raleway:100,300" rel="stylesheet">
+  <script src="https://unpkg.com/vue-multiselect@2.0.0-beta.14"></script>
+  <style src="https://unpkg.com/vue-multiselect@2.0.0-beta.14/dist/vue-multiselect.min.css"></style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+</head>
 
-        <!-- Optional theme -->
-         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-        <!-- Latest compiled and minified JavaScript -->
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-        <script src="https://unpkg.com/vue"></script>
-
-        <!-- CSS -->
-        <link rel="stylesheet" type="text/css" href="CSS.css">
-        <link href="https://fonts.googleapis.com/css?family=Raleway:100,300" rel="stylesheet">
-
-        <script src="https://unpkg.com/vue-multiselect@2.0.0-beta.14"></script>
-        <style src="https://unpkg.com/vue-multiselect@2.0.0-beta.14/dist/vue-multiselect.min.css"></style>
-
-    </head>
-
-    <body>
-
-        <div id='app'><!-- Contenedor de todo Vue -->
-
-
-            <h1>
-                &#191;Libre?
-            </h1>
-            <div id="selector">
-
-                <button v-on:click="changeMode()">
-                    {{daySelector}}
-                </button>
-
-
-                <select v-if="selectDay" v-model="selectedDay">
-                    <option value = "Lunes" selected default>Lunes</option>
-                    <option value = "Martes">Martes</option>
-                    <option>Miercoles</option>
-                    <option>Jueves</option>
-                    <option>Viernes</option>
-                    <option>Sabado</option>
-                    <option>Domingo</option>
-                </select>
-
-                <select v-model="selectedClassroom">
-                    <option v-for="item in salones" selected>{{item}}</option>
-                </select>
-
-                <br>
-
-                <button v-if="selectedClassroom && (selectedDay.length > 0 || selectedDay >= 0)" v-on:click="buscarSalonesEdificio(selectedClassroom, selectedDay)">
-                    {{SalonesDisponibles}}
-                </button>
-
+<body>
+  <meta name="viewport" content="width=device-width">
+  <div id='app' align=center>
+    <div style="height:100px;">
+      <h1>
+        Salones Disponibles
+      </h1>
+      <div id="selector">
+        <select v-model="selectedClassroom" class="selectpicker">
+          <option selected></option>
+          <option v-for="item in salones">{{item}}</option>
+        </select>
+      </div>
+    </div>
+    <div>
+      <div v-if="selectedClassroom!=''" style="height:400px;overflow:scroll;-webkit-overflow-scrolling: touch;">
+        <div id="cr" v-for="(disponible, index) in losSalones"  >
+          <div v-for="horario in disponible" v-if="checkAvailable(horario)" class="container" style="width:200px;">
+            <hr>
+            <h1>{{index.replace("_","").replace(".","")}}</h1>
+            <h2>✅ hasta las <label>{{horario.split("-")[1]}}<label></h2>
             </div>
-
-            <h1> Edificio seleccionado: {{selectedClassroom}} </h1>
-
-            <p id="cr" v-for="(disponible, index) in message">{{formatClassroom(index) + ": "+ disponible}}</p>
-
+          </div>
         </div>
+      </div>
+    </div>
+    <script>
 
-        <script v-on:onload="cargarSalones('Onload')">
+    var d = new Date();
 
-        var app = new Vue({
-            el: '#app',
-            data:{
-                arregloSalones: {},
-                jsonObject: '',
-                message: '',
-                test:null,
-                selectDay: false,
-                selectedDay: 'L',
-                today: new Date(),
-                salones: ["Au","ML", "W", "Tx", "R", "Q", "J", "H", "Ip", "B", "Z", "S1", "SD", "LL", "Pu", "K2"],
-                selectedClassroom: ''
-            },
-            methods:{
-                cargarSalones: function(llamado)
-                {
-                    console.log("Comienzo desde " + llamado + ": " + new Date())
-                    let networkPromise = fetch('/FreeClassrooms.json');
-                    networkPromise.then((rjson)=>{
-                        let parsinPromise = rjson.json();
-                        parsinPromise.then((rsalones)=>{
-                            console.log(JSON.stringify(rsalones));
-                            this.jsonObject = rsalones;
-                            //this.arregloSalones = JSON.parse(rsalones); //Acá puedo llamarle a rSalones un atributo (objeto del JSON)
-                        })
-                   })
+    var weekday = new Array(7);
 
-                console.log("Se demoro hasta " + llamado + ": " + new Date())
-               },
+    weekday[0] =  "Domingo";
+    weekday[1] = "Lunes";
+    weekday[2] = "Martes";
+    weekday[3] = "Miercoles";
+    weekday[4] = "Jueves";
+    weekday[5] = "Viernes";
+    weekday[6] = "Sabado";
 
-               buscarSalonesEdificio: function(salon, dia)
-               {
-                   console.log(dia)
-                   dia = this.identifyDay(dia)
-                   console.log(dia)
-                   salon = salon.toUpperCase();
-                   console.log(salon + "//" + dia);
-                   salones = {}
-                   for(elemento in this.jsonObject)
-                   {
-                       if (elemento.includes('.'+salon))
-                       {
-                           //kill yourself javaScript
-                           salones[elemento] = this.jsonObject[elemento][dia]
-                       }
-                   }
-                   this.message = salones
-               },
+    var app = new Vue({
+      el: '#app',
+      data:{
+        jsonObject: '',
+        selectDay: true,
+        selectedDay: d.getDay(),
+        salones: ["AU","ML", "W", "TX", "R", "Q", "J", "H", "Ip", "B", "Z", "S1", "SD", "LL", "PU", "K2", "O"],
+        selectedClassroom: ''
+      },
+      methods:{
+        cargarSalones: function()
+        {
+          let networkPromise = fetch('/FreeClassrooms.json');
+          networkPromise.then((rjson)=>{
+            let parsinPromise = rjson.json();
+            parsinPromise.then((rsalones)=>{
+              this.jsonObject = rsalones;
+            })
+          })
+        },
+        checkAvailable: function(horario){
+          var horas = horario.replace(/\s/g,'').split("-")
+          var horaInicio = horas[0]
+          var horaFinal = horas[1]
+          if(this.hourToDisplay>horaInicio && this.hourToDisplay<horaFinal){
+            return true;
+          }
+          return false;
 
-               selectClassroom: function(salon)
-               {
-                    this.selectedClassroom = salon
-               },
-
-               identifyDay: function(strDay)
-               {
-                   if (!isNaN(strDay))
-                        return strDay;
-                   if (strDay.startsWith("L"))
-                        return 0;
-                    else if (strDay.startsWith("Ma"))
-                        return 1;
-                    else if (strDay.startsWith("Mi"))
-                        return 2;
-                    else if (strDay.startsWith("J"))
-                        return 3;
-                    else if (strDay.startsWith("V"))
-                        return 4;
-                    else if (strDay.startsWith("S"))
-                        return 5;
-                    else
-                        return 6;
-               },
-
-                isArray: function(what)
-                {
-                    return Object.prototype.toString.call(what) === '[object Array]';
-                },
-
-                changeMode: function()
-                {
-                    if (!this.selectDay)
-                        this.selectedDay = '';
-                    this.selectDay = !this.selectDay;
-
-                },
-
-                formatClassroom: function(classroom)
-                {
-                    return classroom.substr(1);
-                }
-            },
-            //Ejecuta código al cargar la página (Especificamente, al crear la instancia del objeto Vue)
-            created: function()
+        }
+      },
+      created: function()
+      {
+        this.cargarSalones();
+      },
+      computed:{
+        losSalones: function(){
+          salones = {};
+          for(elemento in this.jsonObject)
+          {
+            if (elemento.includes('.'+this.selectedClassroom))
             {
-                this.cargarSalones("Created")
-                console.log(this.jsonObject)
-            },
-
-            computed:{
-                //Computed section means cached values that only modify when a DOM event changes them
-                daySelector: function()
-                {
-                    if (this.selectDay)
-                    {
-                        return "Cambiar a dia actual"
-                    }
-                    else
-                    {
-                        this.selectedDay = this.today.getDay()-1
-                        if (this.selectedDay<0)
-                            this.selectedDay = 6
-                        return "Cambiar a seleccionar dia"
-                    }
-                },
-
-                SalonesDisponibles: function()
-                {
-                    if (!this.selectDay)
-                        return "Buscar salones disponibles para hoy";
-                    else
-                        return "Buscar salones disponibles para el " + this.selectedDay;
-                }
+              salones[elemento] = this.jsonObject[elemento][this.selectedDay];
             }
-        })
+          }
+          return salones;
+        },
+        dayToDisplay: function(){
+          return weekday[this.selectedDay];
+        },
+        hourToDisplay: function(){
+          return d.getHours()*100;
+        }
+      }
+    });
+    </script>
+  </body>
 
-        </script>
-    </body>
-
-</html>
+  </html>
