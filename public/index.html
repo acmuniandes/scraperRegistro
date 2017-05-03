@@ -3,16 +3,13 @@
 <head>
   <script src="https://code.jquery.com/jquery-3.2.1.slim.js" integrity="sha256-tA8y0XqiwnpwmOIl3SGAcFl2RvxHjA8qp0+1uCGmRmg=" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+  <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous"> -->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/vue"></script>
+  <script src="vue.min.js"></script>
   <!-- <link rel="stylesheet" type="text/css" href="CSS.css"> -->
   <link href="https://fonts.googleapis.com/css?family=Raleway:100,300" rel="stylesheet">
-  <script src="https://unpkg.com/vue-multiselect@2.0.0-beta.14"></script>
-  <style src="https://unpkg.com/vue-multiselect@2.0.0-beta.14/dist/vue-multiselect.min.css"></style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
-
 </head>
 
 <body>
@@ -77,8 +74,10 @@
         },
         checkAvailable: function(horario){
           var horas = horario.replace(/\s/g,'').split("-")
-          var horaInicio = horas[0]
-          var horaFinal = horas[1]
+          var horaInicio = Math.max(horas[0],600);
+          var horaFinal = Math.min(horas[1], 2200);
+          console.log(horaInicio);
+          console.log(horaFinal);
           if(this.hourToDisplay>horaInicio && this.hourToDisplay<horaFinal){
             return true;
           }
