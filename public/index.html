@@ -78,7 +78,7 @@
           var horaFinal = horas[1];
           console.log(horaInicio);
           console.log(horaFinal);
-          if(this.hourToDisplay>horaInicio && this.hourToDisplay<horaFinal){
+          if(this.hourToDisplay>=horaInicio && this.hourToDisplay<horaFinal){
             return true;
           }
           return false;
@@ -96,7 +96,14 @@
           {
             if (elemento.includes('.'+this.selectedClassroom))
             {
-              salones[elemento] = this.jsonObject[elemento][this.selectedDay];
+            	var diaJson;
+            	if(this.selectedDay == 0){
+            		diaJson = 6;
+            	}
+            	else{
+            		diaJson = this.selectedDay - 1;
+            	}
+              salones[elemento] = this.jsonObject[elemento][diaJson];
             }
           }
           return salones;
@@ -105,7 +112,7 @@
           return weekday[this.selectedDay];
         },
         hourToDisplay: function(){
-          return d.getHours()*100;
+          return d.getHours()*100 + d.getMinutes();
         }
       }
     });
