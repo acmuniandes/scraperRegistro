@@ -27,7 +27,7 @@
       </div>
     </div>
     <div>
-      <div v-if="selectedClassroom!=''" style="height:400px;overflow:scroll;-webkit-overflow-scrolling: touch;">
+      <div v-if="selectedClassroom!=''" style="height:80%;overflow:scroll;-webkit-overflow-scrolling: touch;">
         <div id="cr" v-for="(disponible, index) in losSalones"  >
           <div v-for="horario in disponible" v-if="checkAvailable(horario)" class="container" style="width:200px;">
             <hr>
@@ -59,7 +59,8 @@
         selectDay: true,
         selectedDay: d.getDay(),
         salones: ["AU","ML", "W", "TX", "R", "Q", "J", "H", "Ip", "B", "Z", "S1", "SD", "LL", "PU", "K2", "O"],
-        selectedClassroom: ''
+        selectedClassroom: '',
+        hourToDisplay: d.getHours()*100 + d.getMinutes()
       },
       methods:{
         cargarSalones: function()
@@ -73,15 +74,14 @@
           })
         },
         checkAvailable: function(horario){
+            console.log('Entrada: ' + horario)
           var horas = horario.replace(/\s/g,'').split("-")
           var horaInicio = horas[0];
           var horaFinal = horas[1];
-          console.log(horaInicio);
-          console.log(horaFinal);
-          if(this.hourToDisplay>=horaInicio && this.hourToDisplay<horaFinal){
+          if(this.hourToDisplay<horaFinal)
             return true;
-          }
-          return false;
+          else
+            return false;
 
         }
       },
@@ -90,6 +90,7 @@
         this.cargarSalones();
       },
       computed:{
+        //Retorna los salones del salon actual seleccionado
         losSalones: function(){
           salones = {};
           for(elemento in this.jsonObject)
@@ -97,12 +98,11 @@
             if (elemento.includes('.'+this.selectedClassroom))
             {
             	var diaJson;
-            	if(this.selectedDay == 0){
+            	if(this.selectedDay == 0)
             		diaJson = 6;
-            	}
-            	else{
+            	else
             		diaJson = this.selectedDay - 1;
-            	}
+            	
               salones[elemento] = this.jsonObject[elemento][diaJson];
             }
           }
@@ -110,9 +110,6 @@
         },
         dayToDisplay: function(){
           return weekday[this.selectedDay];
-        },
-        hourToDisplay: function(){
-          return d.getHours()*100 + d.getMinutes();
         }
       }
     });
